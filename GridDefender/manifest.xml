@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Name>GVK GridDefender</Name>
+    <Guid>bc743a7e-e3ab-44c6-ac07-132b0291f0d1</Guid>
+    <Version>2.0.0.0</Version>
+    <Author>GVK</Author>
+    <Description>Advanced grid deformation defense and physics performance optimizer for Space Engineers Torch servers.</Description>
+</PluginManifest>
+

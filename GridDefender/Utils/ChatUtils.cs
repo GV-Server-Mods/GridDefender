@@ -1,0 +1,27 @@
+using System;
+using Sandbox.Game.Gui;
+using Torch;
+using Torch.API;
+using Torch.Mod;
+using Torch.Mod.Messages;
+using VRage.Game;
+using VRageMath;
+
+namespace GVK.GridDefender.Utils
+{
+    public static class ChatUtils
+    {
+        public const string Prefix = "GridDefender";
+
+        public static void SendMessageToPlayer(ulong steamId, string message, Color color)
+        {
+            if (steamId == 0) return;
+            TorchBase.Instance?.Invoke(() =>
+            {
+                var msg = new NotificationMessage(message, 5000, MyFontEnum.White);
+                ModCommunication.SendMessageTo(msg, steamId);
+            });
+        }
+    }
+}
+
