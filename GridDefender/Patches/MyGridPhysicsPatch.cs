@@ -8,11 +8,18 @@ using VRage.Game.Entity;
 
 namespace GVK.GridDefender.Patches
 {
+    /// <summary>
+    /// Harmony prefix hook on <see cref="MyGridPhysics.PerformDeformation"/> to intercept and filter collision deformation.
+    /// </summary>
     [HarmonyPatch]
     public static class MyGridPhysicsPatch
     {
         private static readonly ILogger Log = LogManager.GetLogger("GridDefender.Patch");
 
+        /// <summary>
+        /// Registers the PerformDeformation prefix hook with the Torch PatchManager context.
+        /// </summary>
+        /// <param name="ctx">Torch PatchManager context.</param>
         public static void Patch(PatchContext ctx)
         {
             try
@@ -34,6 +41,13 @@ namespace GVK.GridDefender.Patches
             }
         }
 
+        /// <summary>
+        /// Prefix hook executed before Havok applies deformation damage to a grid.
+        /// </summary>
+        /// <param name="__instance">Physics body of the impacted grid.</param>
+        /// <param name="otherEntity">Other entity involved in collision.</param>
+        /// <param name="separatingVelocity">Collision separating speed.</param>
+        /// <returns>True to proceed with vanilla deformation; false to skip deformation entirely.</returns>
         [HarmonyPrefix]
         [HarmonyPatch(typeof(MyGridPhysics), "PerformDeformation")]
         public static bool Prefix(MyGridPhysics __instance, MyEntity otherEntity, ref float separatingVelocity)

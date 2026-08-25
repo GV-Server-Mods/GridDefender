@@ -152,14 +152,6 @@
                             </StackPanel>
                         </GroupBox>
 
-                        <!-- Wheel & Suspension Broadphase Optimizer -->
-                        <GroupBox Header="🏎️ Wheel &amp; Suspension Broadphase Optimizer">
-                            <StackPanel>
-                                <TextBlock Text="Fixes Keen's Havok collision filter bug by applying symmetrical sub-system masking. Eliminates redundant AABB compound queries against wheel wells, fenders, and armor skirts without altering global physics layers." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8" TextWrapping="Wrap"/>
-                                <CheckBox Content="Enable Wheel &amp; Suspension Broadphase Optimizer" IsChecked="{Binding Config.EnableWheelOptimization}" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </GroupBox>
-
                         <!-- Missile (PMW) Settings -->
                         <GroupBox Header="🚀 Missile (PMW) Allowance Settings">
                             <StackPanel>

@@ -14,6 +14,11 @@ using VRageMath;
 
 namespace GVK.GridDefender.Engine
 {
+    /// <summary>
+    /// Core collision evaluation engine. Determines whether collision impact deformation is allowed
+    /// (e.g. for player-made missiles) or suppressed (for ships, rovers, stations, and subgrids).
+    /// Also manages kinetic damping and anti-stuck push-apart separation.
+    /// </summary>
     public class DeformationDefenseEngine
     {
         private static readonly ILogger Log = LogManager.GetLogger("GridDefender.Engine");
@@ -24,12 +29,21 @@ namespace GVK.GridDefender.Engine
         private readonly ConcurrentDictionary<long, int> _consecutiveContactFrames = new ConcurrentDictionary<long, int>();
         private readonly ConcurrentDictionary<long, ulong> _lastContactFrameTracker = new ConcurrentDictionary<long, ulong>();
 
+        /// <summary>
+        /// Creates a new instance of the deformation defense engine.
+        /// </summary>
+        /// <param name="config">Plugin configuration reference.</param>
+        /// <param name="stats">Telemetry service instance.</param>
         public DeformationDefenseEngine(GridDefenderConfig config, DefenseStatistics stats)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _stats = stats ?? throw new ArgumentNullException(nameof(stats));
         }
 
+        /// <summary>
+        /// Updates the active configuration reference.
+        /// </summary>
+        /// <param name="config">New configuration instance.</param>
         public void UpdateConfig(GridDefenderConfig config)
         {
             if (config != null)
@@ -38,9 +52,15 @@ namespace GVK.GridDefender.Engine
             }
         }
 
+        /// <summary>
+        /// Evaluates whether a given grid qualifies as a player-made missile (PMW) based on size and speed.
+        /// </summary>
+        /// <param name="testGrid">Grid to evaluate.</param>
+        /// <param name="speed">Relative collision or linear speed in m/s.</param>
+        /// <returns>True if the grid meets the missile block and velocity criteria; otherwise false.</returns>
         public bool IsMissile(MyCubeGrid testGrid, float speed)
         {
-            if (testGrid == null) return false;
+            if (testGrid == null || testGrid.IsStatic) return false;
             if (speed < _config.MissileMinVelocity) return false;
 
             int blocks = testGrid.BlocksCount;
@@ -55,6 +75,13 @@ namespace GVK.GridDefender.Engine
             return false;
         }
 
+        /// <summary>
+        /// Main collision decision hook. Evaluates the collision event across the 7-step pipeline.
+        /// </summary>
+        /// <param name="physics">Physics component of the grid taking impact.</param>
+        /// <param name="otherEntity">The other colliding entity (grid, voxel, floating object).</param>
+        /// <param name="separatingVelocity">Reference to Havok separating velocity, scaled if multiplier &lt; 1.0.</param>
+        /// <returns>True if deformation should be allowed; false to suppress deformation damage.</returns>
         public bool ShouldAllowDeformation(MyGridPhysics physics, MyEntity otherEntity, ref float separatingVelocity)
         {
             if (!_config.Enabled)
@@ -144,16 +171,26 @@ namespace GVK.GridDefender.Engine
 
             // 7. Non-Missile Collisions (Ships, Rovers, Stations, Voxels)
             // A. Static Station Protection
-            if (grid.IsStatic && _config.ProtectStaticGrids)
+            bool otherIsStaticGrid = (otherEntity as MyCubeGrid)?.IsStatic == true;
+            if ((grid.IsStatic || otherIsStaticGrid) && _config.ProtectStaticGrids)
             {
                 if (_config.EnableDebugLogging)
                 {
-                    Log.Debug($"[GridDefender] Blocked non-missile collision on static station '{grid.DisplayName}'.");
+                    string stationName = grid.IsStatic ? grid.DisplayName : otherEntity.DisplayName;
+                    Log.Debug($"[GridDefender] Blocked non-missile collision on static station '{stationName}'.");
                 }
-                if (otherEntity is MyCubeGrid otherCubeGrid && !otherCubeGrid.IsStatic && otherCubeGrid.Physics != null)
+                if (grid.IsStatic)
                 {
-                    ApplyImpactDamping(otherCubeGrid.Physics as MyGridPhysics, false);
-                    ApplyAntiClang(otherCubeGrid, otherCubeGrid.Physics as MyGridPhysics, grid);
+                    if (otherEntity is MyCubeGrid otherCubeGrid && !otherCubeGrid.IsStatic && otherCubeGrid.Physics != null)
+                    {
+                        ApplyImpactDamping(otherCubeGrid.Physics as MyGridPhysics, false);
+                        ApplyAntiClang(otherCubeGrid, otherCubeGrid.Physics as MyGridPhysics, grid);
+                    }
+                }
+                else
+                {
+                    ApplyImpactDamping(physics, false);
+                    ApplyAntiClang(grid, physics, otherEntity);
                 }
                 _stats.IncrementBlocked(isRamming: otherEntity is MyCubeGrid, isVoxel: otherEntity is MyVoxelBase);
                 return false;
@@ -297,6 +334,12 @@ namespace GVK.GridDefender.Engine
                 TryPushApart(grid, otherEntity);
                 _consecutiveContactFrames[gridEntityId] = 0; // Reset counter after push
             }
+
+            // Periodically clean up stale contact tracking entries
+            if (_lastContactFrameTracker.Count > 250)
+            {
+                TrimOldFrames(currentFrame);
+            }
         }
 
         private void TryPushApart(MyCubeGrid grid, MyEntity otherEntity)
@@ -388,8 +431,8 @@ namespace GVK.GridDefender.Engine
             ulong currentFrame = MySandboxGame.Static?.SimulationFrameCounter ?? 0;
             _lastDeformationFrames[gridEntityId] = currentFrame;
 
-            // Trim stale entries
-            if (_lastDeformationFrames.Count > 1000)
+            // Trim stale entries if needed
+            if (_lastDeformationFrames.Count > 500)
             {
                 TrimOldFrames(currentFrame);
             }
@@ -402,13 +445,21 @@ namespace GVK.GridDefender.Engine
         {
             try
             {
+                foreach (var kvp in _lastContactFrameTracker)
+                {
+                    if (currentFrame > kvp.Value && (currentFrame - kvp.Value) > 600) // 10 seconds without contact
+                    {
+                        _lastContactFrameTracker.TryRemove(kvp.Key, out _);
+                        _consecutiveContactFrames.TryRemove(kvp.Key, out _);
+                        _lastDeformationFrames.TryRemove(kvp.Key, out _);
+                    }
+                }
+
                 foreach (var kvp in _lastDeformationFrames)
                 {
-                    if (currentFrame > kvp.Value && (currentFrame - kvp.Value) > 600) // 10 seconds
+                    if (currentFrame > kvp.Value && (currentFrame - kvp.Value) > 600)
                     {
                         _lastDeformationFrames.TryRemove(kvp.Key, out _);
-                        _consecutiveContactFrames.TryRemove(kvp.Key, out _);
-                        _lastContactFrameTracker.TryRemove(kvp.Key, out _);
                     }
                 }
             }

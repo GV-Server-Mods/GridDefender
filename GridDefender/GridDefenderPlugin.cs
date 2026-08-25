@@ -14,6 +14,10 @@ using Torch.Managers.PatchManager;
 
 namespace GVK.GridDefender
 {
+    /// <summary>
+    /// Main entry point and lifecycle manager for the GVK GridDefender Torch plugin.
+    /// Manages configuration persistence, collision defense hooks, and WPF server UI integration.
+    /// </summary>
     public class GridDefenderPlugin : TorchPluginBase, IWpfPlugin
     {
         public static readonly ILogger Log = LogManager.GetLogger("GVK.GridDefender");
@@ -21,12 +25,30 @@ namespace GVK.GridDefender
         private Persistent<GridDefenderConfig> _config;
         private GridDefenderControl _control;
 
+        /// <summary>
+        /// Singleton instance of the running plugin.
+        /// </summary>
         public static GridDefenderPlugin Instance { get; private set; }
 
+        /// <summary>
+        /// Active runtime configuration model.
+        /// </summary>
         public GridDefenderConfig Config => _config?.Data;
+
+        /// <summary>
+        /// Real-time collision telemetry and statistics service.
+        /// </summary>
         public DefenseStatistics Statistics { get; private set; }
+
+        /// <summary>
+        /// Core collision evaluation and anti-clang engine.
+        /// </summary>
         public DeformationDefenseEngine Engine { get; private set; }
 
+        /// <summary>
+        /// Initializes plugin systems, loads configuration, and registers Harmony patches.
+        /// </summary>
+        /// <param name="torch">Torch base server instance.</param>
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
@@ -50,7 +72,6 @@ namespace GVK.GridDefender
                 {
                     var ctx = patchManager.AcquireContext();
                     MyGridPhysicsPatch.Patch(ctx);
-                    MotorSuspensionPatch.Patch(ctx);
                     patchManager.Commit();
                 }
                 else
@@ -66,6 +87,9 @@ namespace GVK.GridDefender
             }
         }
 
+        /// <summary>
+        /// Loads configuration from disk or generates defaults if missing.
+        /// </summary>
         public void LoadConfig()
         {
             try
@@ -87,6 +111,9 @@ namespace GVK.GridDefender
             }
         }
 
+        /// <summary>
+        /// Saves active runtime configuration to the persistent config file.
+        /// </summary>
         public void SaveConfig()
         {
             try
@@ -100,11 +127,17 @@ namespace GVK.GridDefender
             }
         }
 
+        /// <summary>
+        /// Provides the WPF UserControl tab for Torch GUI integration.
+        /// </summary>
         public UserControl GetControl()
         {
             return _control ?? (_control = new GridDefenderControl(this));
         }
 
+        /// <summary>
+        /// Disposes plugin resources and saves pending configuration on server shutdown.
+        /// </summary>
         public override void Dispose()
         {
             try

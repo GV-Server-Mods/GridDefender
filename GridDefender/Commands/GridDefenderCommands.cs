@@ -7,11 +7,18 @@ using VRage.Game.ModAPI;
 
 namespace GVK.GridDefender.Commands
 {
+    /// <summary>
+    /// In-game chat and Torch console command module under the !defender prefix.
+    /// Provides rules inspection for players and configuration / telemetry controls for administrators.
+    /// </summary>
     [Category("defender")]
     public class GridDefenderCommands : CommandModule
     {
         private GridDefenderPlugin Plugin => GridDefenderPlugin.Instance;
 
+        /// <summary>
+        /// Displays the player-facing collision rules and missile allowance limits in chat.
+        /// </summary>
         [Command("rules", "Explains current missile vs ship protection rules.")]
         [Permission(MyPromoteLevel.None)]
         public void Rules()
@@ -42,6 +49,12 @@ namespace GVK.GridDefender.Commands
             Context.Respond(sb.ToString());
         }
 
+        /// <summary>
+        /// Evaluates whether a given grid size and speed count as a missile or a protected ship.
+        /// </summary>
+        /// <param name="size">Grid size ('large' or 'small').</param>
+        /// <param name="blocks">Block count of the construct.</param>
+        /// <param name="speed">Impact speed in m/s.</param>
         [Command("check", "Tests if a grid size and speed count as a missile or a protected ship. Usage: !defender check <large/small> <blockCount> <speed>")]
         [Permission(MyPromoteLevel.None)]
         public void Check(string size, int blocks, float speed)
@@ -88,6 +101,9 @@ namespace GVK.GridDefender.Commands
             }
         }
 
+        /// <summary>
+        /// Displays active plugin configuration parameters to administrators.
+        /// </summary>
         [Command("status", "Shows the current GridDefender status and configuration summary.")]
         [Permission(MyPromoteLevel.Admin)]
         public void Status()
@@ -113,11 +129,13 @@ namespace GVK.GridDefender.Commands
             sb.AppendLine($"Max Velocity Limit: {cfg.MaxDeformationVelocity:F1} m/s");
             sb.AppendLine($"Anti-Clang: {cfg.EnableAntiClang} (Damping: {cfg.ImpactVelocityDamping:F2}, Threshold: {cfg.AntiClangVibrationThreshold} frames)");
             sb.AppendLine($"Push-Apart: {cfg.EnablePushApart} (Distance: {cfg.PushApartDistance:F2}m, Threshold: {cfg.PushApartThreshold} frames)");
-            sb.AppendLine($"Wheel Broadphase Optimizer: {cfg.EnableWheelOptimization}");
 
             Context.Respond(sb.ToString());
         }
 
+        /// <summary>
+        /// Displays real-time collision telemetry and statistics to administrators.
+        /// </summary>
         [Command("stats", "Displays real-time collision and missile statistics.")]
         [Permission(MyPromoteLevel.Admin)]
         public void Stats()
@@ -144,6 +162,9 @@ namespace GVK.GridDefender.Commands
             Context.Respond(sb.ToString());
         }
 
+        /// <summary>
+        /// Resets real-time collision telemetry counters to zero.
+        /// </summary>
         [Command("resetstats", "Resets the defense statistics counters.")]
         [Permission(MyPromoteLevel.Admin)]
         public void ResetStats()
@@ -152,6 +173,9 @@ namespace GVK.GridDefender.Commands
             Context.Respond("GridDefender statistics have been reset to zero.");
         }
 
+        /// <summary>
+        /// Toggles the plugin on or off.
+        /// </summary>
         [Command("toggle", "Toggles the GridDefender plugin on or off.")]
         [Permission(MyPromoteLevel.Admin)]
         public void Toggle()
@@ -167,6 +191,9 @@ namespace GVK.GridDefender.Commands
             Context.Respond($"GridDefender is now {(Plugin.Config.Enabled ? "ENABLED" : "DISABLED")}.");
         }
 
+        /// <summary>
+        /// Toggles protection against voxel terrain and asteroid deformation damage.
+        /// </summary>
         [Command("togglevoxels", "Toggles protection against voxel and asteroid collision damage.")]
         [Permission(MyPromoteLevel.Admin)]
         public void ToggleVoxels()
@@ -182,6 +209,9 @@ namespace GVK.GridDefender.Commands
             Context.Respond($"Voxel Collision Protection is now {(Plugin.Config.ProtectShipsAgainstVoxels ? "ENABLED (Ships will NOT deform on voxels/asteroids)" : "DISABLED (Ships WILL take collision damage on voxels/asteroids)")}.");
         }
 
+        /// <summary>
+        /// Reloads configuration from disk.
+        /// </summary>
         [Command("reload", "Reloads the configuration from file.")]
         [Permission(MyPromoteLevel.Admin)]
         public void Reload()
@@ -196,6 +226,11 @@ namespace GVK.GridDefender.Commands
             Context.Respond("GridDefender configuration reloaded from disk.");
         }
 
+        /// <summary>
+        /// Modifies a configuration property on the fly.
+        /// </summary>
+        /// <param name="property">Setting name or alias.</param>
+        /// <param name="value">New value.</param>
         [Command("set", "Changes a configuration setting on the fly. Usage: !defender set <property> <value>")]
         [Permission(MyPromoteLevel.Admin)]
         public void Set(string property, string value)
@@ -307,13 +342,8 @@ namespace GVK.GridDefender.Commands
                     case "pushapartthreshold":
                         cfg.PushApartThreshold = int.Parse(value, CultureInfo.InvariantCulture);
                         break;
-                    case "wheelopt":
-                    case "wheeloptimization":
-                    case "enablewheeloptimization":
-                        cfg.EnableWheelOptimization = bool.Parse(value);
-                        break;
                     default:
-                        Context.Respond($"Unknown setting '{property}'. Valid options: enabled, debug, multiplier, allowmissiles, largemin, largemax, smallmin, smallmax, missilespeed, protectramming, protectvoxels, protectstations, protectsubgrids, protectfloating, mindriving, maxvelocity, cooldown, anticlang, damping, vibrationthreshold, stopspin, pushapart, pushdistance, pushthreshold, wheelopt.");
+                        Context.Respond($"Unknown setting '{property}'. Valid options: enabled, debug, multiplier, allowmissiles, largemin, largemax, smallmin, smallmax, missilespeed, protectramming, protectvoxels, protectstations, protectsubgrids, protectfloating, mindriving, maxvelocity, cooldown, anticlang, damping, vibrationthreshold, stopspin, pushapart, pushdistance, pushthreshold.");
                         return;
                 }
 

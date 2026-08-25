@@ -4,6 +4,10 @@ using Torch.Views;
 
 namespace GVK.GridDefender.Config
 {
+    /// <summary>
+    /// Configuration model for GVK GridDefender, containing all missile gates,
+    /// crash protection toggles, anti-clang settings, and separation parameters.
+    /// </summary>
     public class GridDefenderConfig : ViewModel
     {
         private bool _enabled = true;
@@ -72,7 +76,14 @@ namespace GVK.GridDefender.Config
         public int LargeGridMissileMinBlocks
         {
             get => _largeGridMissileMinBlocks;
-            set => SetValue(ref _largeGridMissileMinBlocks, Math.Max(1, value));
+            set
+            {
+                SetValue(ref _largeGridMissileMinBlocks, Math.Max(1, value));
+                if (_largeGridMissileMaxBlocks < _largeGridMissileMinBlocks)
+                {
+                    LargeGridMissileMaxBlocks = _largeGridMissileMinBlocks;
+                }
+            }
         }
 
         [Display(Order = 6, Name = "Large Missile Max Blocks", GroupName = "Missile (PMW) Settings", Description = "Maximum block count for a large grid missile/torpedo. Grids up to this size deal missile damage. Default: 50.")]
@@ -86,7 +97,14 @@ namespace GVK.GridDefender.Config
         public int SmallGridMissileMinBlocks
         {
             get => _smallGridMissileMinBlocks;
-            set => SetValue(ref _smallGridMissileMinBlocks, Math.Max(1, value));
+            set
+            {
+                SetValue(ref _smallGridMissileMinBlocks, Math.Max(1, value));
+                if (_smallGridMissileMaxBlocks < _smallGridMissileMinBlocks)
+                {
+                    SmallGridMissileMaxBlocks = _smallGridMissileMinBlocks;
+                }
+            }
         }
 
         [Display(Order = 8, Name = "Small Missile Max Blocks", GroupName = "Missile (PMW) Settings", Description = "Maximum block count for a small grid missile. Grids up to this size deal missile damage. Default: 150.")]
@@ -205,21 +223,11 @@ namespace GVK.GridDefender.Config
             set => SetValue(ref _maxDeformationVelocity, Math.Max(0.0f, value));
         }
 
-        // --- Wheel & Suspension Physics Optimizer ---
-        private bool _enableWheelOptimization = true;
-
         [Display(Order = 24, Name = "Deformation Cooldown (Frames)", GroupName = "Safety Thresholds", Description = "Minimum simulation frames (60 = 1 sec) between deformation processing per grid during continuous contact.")]
         public int DeformationCooldownFrames
         {
             get => _deformationCooldownFrames;
             set => SetValue(ref _deformationCooldownFrames, Math.Max(0, value));
-        }
-
-        [Display(Order = 25, Name = "Enable Wheel Broadphase Optimizer", GroupName = "Wheel & Suspension", Description = "Fixes Keen's collision filter bug to eliminate redundant Havok AABB broadphase queries between wheels and surrounding wheel wells/fenders without changing global physics layers.")]
-        public bool EnableWheelOptimization
-        {
-            get => _enableWheelOptimization;
-            set => SetValue(ref _enableWheelOptimization, value);
         }
     }
 }

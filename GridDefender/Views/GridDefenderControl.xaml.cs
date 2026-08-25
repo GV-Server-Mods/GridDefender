@@ -5,11 +5,18 @@ using System.Windows.Threading;
 
 namespace GVK.GridDefender.Views
 {
+    /// <summary>
+    /// Interaction logic for GridDefenderControl.xaml WPF interface in Torch.
+    /// Provides real-time telemetry polling and configuration persistence controls.
+    /// </summary>
     public partial class GridDefenderControl : UserControl
     {
         private GridDefenderPlugin Plugin { get; }
         private readonly DispatcherTimer _telemetryTimer;
 
+        /// <summary>
+        /// Default constructor for WPF designer support.
+        /// </summary>
         public GridDefenderControl()
         {
             InitializeComponent();
@@ -27,6 +34,10 @@ namespace GVK.GridDefender.Views
             Unloaded += (s, e) => _telemetryTimer.Stop();
         }
 
+        /// <summary>
+        /// Initializes the control bound to the active plugin instance.
+        /// </summary>
+        /// <param name="plugin">Active GridDefenderPlugin instance.</param>
         public GridDefenderControl(GridDefenderPlugin plugin) : this()
         {
             Plugin = plugin;
