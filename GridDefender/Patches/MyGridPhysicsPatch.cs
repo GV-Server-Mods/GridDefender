@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using HarmonyLib;
 using NLog;
 using Sandbox.Game.Entities.Cube;
 using Torch.Managers.PatchManager;
@@ -9,9 +8,8 @@ using VRage.Game.Entity;
 namespace GVK.GridDefender.Patches
 {
     /// <summary>
-    /// Harmony prefix hook on <see cref="MyGridPhysics.PerformDeformation"/> to intercept and filter collision deformation.
+    /// Torch PatchManager prefix hook on <see cref="MyGridPhysics.PerformDeformation"/> to intercept and filter collision deformation.
     /// </summary>
-    [HarmonyPatch]
     public static class MyGridPhysicsPatch
     {
         private static readonly ILogger Log = LogManager.GetLogger("GridDefender.Patch");
@@ -46,10 +44,8 @@ namespace GVK.GridDefender.Patches
         /// </summary>
         /// <param name="__instance">Physics body of the impacted grid.</param>
         /// <param name="otherEntity">Other entity involved in collision.</param>
-        /// <param name="separatingVelocity">Collision separating speed.</param>
+        /// <param name="separatingVelocity">Collision separating speed in m/s.</param>
         /// <returns>True to proceed with vanilla deformation; false to skip deformation entirely.</returns>
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(MyGridPhysics), "PerformDeformation")]
         public static bool Prefix(MyGridPhysics __instance, MyEntity otherEntity, ref float separatingVelocity)
         {
             try

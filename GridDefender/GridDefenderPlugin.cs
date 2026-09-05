@@ -46,7 +46,7 @@ namespace GVK.GridDefender
         public DeformationDefenseEngine Engine { get; private set; }
 
         /// <summary>
-        /// Initializes plugin systems, loads configuration, and registers Harmony patches.
+        /// Initializes plugin systems, loads configuration, and registers Torch physics patches.
         /// </summary>
         /// <param name="torch">Torch base server instance.</param>
         public override void Init(ITorchBase torch)
@@ -73,12 +73,11 @@ namespace GVK.GridDefender
                     var ctx = patchManager.AcquireContext();
                     MyGridPhysicsPatch.Patch(ctx);
                     patchManager.Commit();
+                    Log.Info("[GridDefender] Torch patches registered successfully.");
                 }
                 else
                 {
-                    Log.Warn("[GridDefender] PatchManager not found. Falling back to HarmonyLib directly.");
-                    var harmony = new HarmonyLib.Harmony("GVK.GridDefender");
-                    harmony.PatchAll(typeof(GridDefenderPlugin).Assembly);
+                    Log.Error("[GridDefender] Torch PatchManager not found! Unable to register physics patches.");
                 }
             }
             catch (Exception ex)
