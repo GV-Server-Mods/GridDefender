@@ -266,33 +266,39 @@
                         </GroupBox>
 
                         <!-- Thresholds & Speed Gates -->
-                        <GroupBox Header="⚙️ Speed Gates &amp; Rate Limits (Ships &amp; Rovers)">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="240"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                        <GroupBox Header="⚙️ Fallback Speed Gates &amp; Rate Limits">
+                            <StackPanel>
+                                <Border Background="#1E293B" BorderBrush="#475569" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,8">
+                                    <TextBlock Text="ℹ️ Fallback Safety Net: These thresholds (docking safe-harbor, extreme-speed lag cap, and damage cooldown) only apply if Ship Ramming, Voxel, or Station protection is unchecked above. When all three protections are checked, full collision immunity is active and these thresholds are bypassed." 
+                                               Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap"/>
+                                </Border>
+                                <Grid IsEnabled="{Binding Config.IsSpeedGatesApplicable}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="240"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <Label Grid.Row="0" Grid.Column="0" Content="Min Driving Velocity (m/s, Safe Harbor):"
-                                       ToolTip="Collisions below this speed never deal damage. Allows slow docking, parking, and gentle rover maneuvering."/>
-                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.MinDrivingVelocity, StringFormat={}{0:F1}}"
-                                         ToolTip="Collisions below this speed never deal damage. Allows slow docking, parking, and gentle rover maneuvering."/>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Min Driving Velocity (m/s, Safe Harbor):"
+                                           ToolTip="Fallback: Collisions below this speed never deal damage when ramming or voxel protection is disabled."/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.MinDrivingVelocity, StringFormat={}{0:F1}}"
+                                             ToolTip="Fallback: Collisions below this speed never deal damage when ramming or voxel protection is disabled."/>
 
-                                <Label Grid.Row="1" Grid.Column="0" Content="Max Velocity Limit (m/s, Anti-Crash):"
-                                       ToolTip="Extreme-speed collisions between non-missile ships above this speed skip damage processing to prevent server lag freezes. Missiles bypass this check. 0 to disable."/>
-                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.MaxDeformationVelocity, StringFormat={}{0:F1}}"
-                                         ToolTip="Extreme-speed collisions between non-missile ships above this speed skip damage processing to prevent server lag freezes. Missiles bypass this check. 0 to disable."/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Max Velocity Limit (m/s, Anti-Crash):"
+                                           ToolTip="Fallback: Extreme-speed collisions above this speed skip damage processing to prevent server lag freezes when ramming is allowed."/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.MaxDeformationVelocity, StringFormat={}{0:F1}}"
+                                             ToolTip="Fallback: Extreme-speed collisions above this speed skip damage processing to prevent server lag freezes when ramming is allowed."/>
 
-                                <Label Grid.Row="2" Grid.Column="0" Content="Impact Damage Cooldown (Frames):"
-                                       ToolTip="Minimum simulation ticks (60 frames = 1s) between damage evaluations per grid during continuous contact."/>
-                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.DeformationCooldownFrames}"
-                                         ToolTip="Minimum simulation ticks (60 frames = 1s) between damage evaluations per grid during continuous contact."/>
-                            </Grid>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Impact Damage Cooldown (Frames):"
+                                           ToolTip="Fallback: Simulation frames between damage evaluations per grid during continuous contact when damage is permitted."/>
+                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.DeformationCooldownFrames}"
+                                             ToolTip="Fallback: Simulation frames between damage evaluations per grid during continuous contact when damage is permitted."/>
+                                </Grid>
+                            </StackPanel>
                         </GroupBox>
                     </StackPanel>
                 </ScrollViewer>

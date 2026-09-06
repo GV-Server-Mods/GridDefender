@@ -1,4 +1,5 @@
 using System;
+using System.Xml.Serialization;
 using Torch;
 using Torch.Views;
 
@@ -131,14 +132,22 @@ namespace GVK.GridDefender.Config
         public bool ProtectShipsAgainstRamming
         {
             get => _protectShipsAgainstRamming;
-            set => SetValue(ref _protectShipsAgainstRamming, value);
+            set
+            {
+                SetValue(ref _protectShipsAgainstRamming, value);
+                OnPropertyChanged(nameof(IsSpeedGatesApplicable));
+            }
         }
 
         [Display(Order = 11, Name = "Protect Ships From Voxels", GroupName = "Ship & Rover Protection", Description = "Block collision impact damage when ships and rovers bump planets, asteroids, or terrain.")]
         public bool ProtectShipsAgainstVoxels
         {
             get => _protectShipsAgainstVoxels;
-            set => SetValue(ref _protectShipsAgainstVoxels, value);
+            set
+            {
+                SetValue(ref _protectShipsAgainstVoxels, value);
+                OnPropertyChanged(nameof(IsSpeedGatesApplicable));
+            }
         }
 
         [Display(Order = 12, Name = "Protect Floating Objects / Debris", GroupName = "Ship & Rover Protection", Description = "Suppress impact damage from floating ores, dropped items, and detached debris.")]
@@ -152,7 +161,11 @@ namespace GVK.GridDefender.Config
         public bool ProtectStaticGrids
         {
             get => _protectStaticGrids;
-            set => SetValue(ref _protectStaticGrids, value);
+            set
+            {
+                SetValue(ref _protectStaticGrids, value);
+                OnPropertyChanged(nameof(IsSpeedGatesApplicable));
+            }
         }
 
         [Display(Order = 14, Name = "Protect Subgrids (Rotors/Pistons)", GroupName = "Ship & Rover Protection", Description = "Suppress self-collision impact damage between connected subgrids to prevent Clang explosions.")]
@@ -221,27 +234,34 @@ namespace GVK.GridDefender.Config
             set => SetValue(ref _pushApartDistance, Math.Max(0.1f, Math.Min(5.0f, value)));
         }
 
-        // --- Speed Gates & Rate Limits ---
-        [Display(Order = 23, Name = "Min Driving Velocity (m/s)", GroupName = "Speed Gates & Rate Limits", Description = "Collisions below this speed never cause impact damage (safe docking, parking, slow driving). Default: 10 m/s.")]
+        // --- Speed Gates & Rate Limits (Fallback Safety Net) ---
+        [Display(Order = 23, Name = "Min Driving Velocity (m/s)", GroupName = "Speed Gates & Rate Limits (Fallback)", Description = "Fallback: Collisions below this speed never cause impact damage (safe docking/parking). Active only if Ramming or Voxel protection is disabled.")]
         public float MinDrivingVelocity
         {
             get => _minDrivingVelocity;
             set => SetValue(ref _minDrivingVelocity, Math.Max(0.0f, value));
         }
 
-        [Display(Order = 24, Name = "Max Velocity Threshold (m/s)", GroupName = "Speed Gates & Rate Limits", Description = "Extreme-speed non-missile collisions above this speed (e.g. 110+ m/s) skip damage processing to prevent server lag freezes. 0 to disable.")]
+        [Display(Order = 24, Name = "Max Velocity Threshold (m/s)", GroupName = "Speed Gates & Rate Limits (Fallback)", Description = "Fallback: Non-missile collisions above this speed (e.g. 110 m/s) skip damage to prevent lag freezes. Active only if Ramming or Voxel protection is disabled.")]
         public float MaxDeformationVelocity
         {
             get => _maxDeformationVelocity;
             set => SetValue(ref _maxDeformationVelocity, Math.Max(0.0f, value));
         }
 
-        [Display(Order = 25, Name = "Impact Damage Cooldown (Frames)", GroupName = "Speed Gates & Rate Limits", Description = "Minimum simulation frames (60 = 1 sec) between collision damage processing per grid during continuous contact.")]
+        [Display(Order = 25, Name = "Impact Damage Cooldown (Frames)", GroupName = "Speed Gates & Rate Limits (Fallback)", Description = "Fallback: Minimum simulation frames (60 = 1s) between damage evaluations per grid during grinding. Active only if Ramming or Voxel protection is disabled.")]
         public int DeformationCooldownFrames
         {
             get => _deformationCooldownFrames;
             set => SetValue(ref _deformationCooldownFrames, Math.Max(0, value));
         }
+
+        /// <summary>
+        /// True if fallback speed gates and rate limits are actively applicable (i.e. at least one ship, voxel, or station protection is disabled).
+        /// When full ship protection is enabled, all non-missile collisions are already 100% blocked, making these fallback thresholds dormant.
+        /// </summary>
+        [XmlIgnore]
+        public bool IsSpeedGatesApplicable => !ProtectShipsAgainstRamming || !ProtectShipsAgainstVoxels || !ProtectStaticGrids;
     }
 }
 
