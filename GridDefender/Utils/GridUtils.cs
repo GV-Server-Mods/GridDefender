@@ -41,15 +41,7 @@ namespace GVK.GridDefender.Utils
         {
             if (gridA == null || gridB == null) return false;
             if (ReferenceEquals(gridA, gridB)) return true;
-
-            try
-            {
-                return MyCubeGridGroups.Static?.Mechanical?.HasSameGroup(gridA, gridB) ?? false;
-            }
-            catch
-            {
-                return false;
-            }
+            return MyCubeGridGroups.Static?.Mechanical?.HasSameGroup(gridA, gridB) ?? false;
         }
 
         /// <summary>
@@ -59,15 +51,7 @@ namespace GVK.GridDefender.Utils
         {
             if (gridA == null || gridB == null) return false;
             if (ReferenceEquals(gridA, gridB)) return true;
-
-            try
-            {
-                return MyCubeGridGroups.Static?.Logical?.HasSameGroup(gridA, gridB) ?? false;
-            }
-            catch
-            {
-                return false;
-            }
+            return MyCubeGridGroups.Static?.Logical?.HasSameGroup(gridA, gridB) ?? false;
         }
     }
 }

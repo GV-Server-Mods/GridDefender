@@ -34,17 +34,18 @@ namespace GVK.GridDefender.Commands
             sb.AppendLine("=== Grid Defender Rules ===");
             sb.AppendLine($"Status: {(cfg.Enabled ? "ENABLED" : "DISABLED")}");
             sb.AppendLine();
-            sb.AppendLine("🚀 MISSILES (Damage Allowed):");
-            sb.AppendLine($"• Large Grid Missiles: {cfg.LargeGridMissileMinBlocks} to {cfg.LargeGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity:F1} m/s");
-            sb.AppendLine($"• Small Grid Missiles: {cfg.SmallGridMissileMinBlocks} to {cfg.SmallGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity:F1} m/s");
+            sb.AppendLine("[MISSILES] (Damage Allowed):");
+            sb.AppendLine($"- Large Grid Missiles: {cfg.LargeGridMissileMinBlocks} to {cfg.LargeGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity:F1} m/s");
+            sb.AppendLine($"- Small Grid Missiles: {cfg.SmallGridMissileMinBlocks} to {cfg.SmallGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity:F1} m/s");
             sb.AppendLine();
-            sb.AppendLine("🛡️ SHIPS & ROVERS (Damage Blocked / Protected):");
-            sb.AppendLine($"• Ships > {cfg.LargeGridMissileMaxBlocks} Large / > {cfg.SmallGridMissileMaxBlocks} Small blocks are protected against crash & ramming damage.");
-            sb.AppendLine($"• Safe Docking: All collisions < {cfg.MinDrivingVelocity:F1} m/s are protected.");
-            sb.AppendLine($"• Anti-Ramming: Ship-on-Ship ramming is {(cfg.ProtectShipsAgainstRamming ? "PROTECTED" : "Allowed")}.");
-            sb.AppendLine($"• Terrain Crashes: Voxel collision damage is {(cfg.ProtectShipsAgainstVoxels ? "PROTECTED" : "Allowed")}.");
-            sb.AppendLine($"• Static Grids (Stations): Station damage is {(cfg.ProtectStaticGrids ? "PROTECTED" : "Allowed")}.");
-            sb.AppendLine($"• Subgrids (Rotors/Pistons): Mechanical self-damage is {(cfg.ProtectSubgrids ? "PROTECTED" : "Allowed")}.");
+            sb.AppendLine("[SHIPS & ROVERS] (Damage Blocked / Protected):");
+            sb.AppendLine($"- Ships & Debris outside missile block limits are protected against crash & ramming damage.");
+            sb.AppendLine($"- Safe Docking: All collisions < {cfg.MinDrivingVelocity:F1} m/s are protected.");
+            sb.AppendLine($"- Anti-Ramming: Ship-on-Ship ramming is {(cfg.ProtectShipsAgainstRamming ? "PROTECTED" : "Allowed")}.");
+            sb.AppendLine($"- Terrain Crashes: Voxel collision damage is {(cfg.ProtectShipsAgainstVoxels ? "PROTECTED" : "Allowed")}.");
+            sb.AppendLine($"- Voxel Craters: Explosion & crash craters are {(cfg.SuppressAllVoxelExplosionDamage ? "SUPPRESSED" : "Allowed")} (drills unaffected).");
+            sb.AppendLine($"- Static Grids (Stations): Station damage is {(cfg.ProtectStaticGrids ? "PROTECTED" : "Allowed")}.");
+            sb.AppendLine($"- Subgrids (Rotors/Pistons): Mechanical self-damage is {(cfg.ProtectSubgrids ? "PROTECTED" : "Allowed")}.");
 
             Context.Respond(sb.ToString());
         }
@@ -77,27 +78,21 @@ namespace GVK.GridDefender.Commands
 
             if (speed < cfg.MinDrivingVelocity)
             {
-                Context.Respond($"[GridDefender] Result: 🛡️ PROTECTED (Safe Docking). Speed {speed:F1} m/s is below {cfg.MinDrivingVelocity:F1} m/s min driving speed.");
+                Context.Respond($"[GridDefender] Result: [PROTECTED] (Safe Docking). Speed {speed:F1} m/s is below {cfg.MinDrivingVelocity:F1} m/s min driving speed.");
                 return;
             }
 
-            bool isMissile = false;
-            if (isLarge)
-            {
-                isMissile = blocks >= cfg.LargeGridMissileMinBlocks && blocks <= cfg.LargeGridMissileMaxBlocks && speed >= cfg.MissileMinVelocity;
-            }
-            else
-            {
-                isMissile = blocks >= cfg.SmallGridMissileMinBlocks && blocks <= cfg.SmallGridMissileMaxBlocks && speed >= cfg.MissileMinVelocity;
-            }
+            bool isMissile = isLarge
+                ? (blocks >= cfg.LargeGridMissileMinBlocks && blocks <= cfg.LargeGridMissileMaxBlocks && speed >= cfg.MissileMinVelocity)
+                : (blocks >= cfg.SmallGridMissileMinBlocks && blocks <= cfg.SmallGridMissileMaxBlocks && speed >= cfg.MissileMinVelocity);
 
             if (isMissile)
             {
-                Context.Respond($"[GridDefender] Result: 🚀 MISSILE (Damage Allowed!). {blocks} blocks @ {speed:F1} m/s meets missile criteria and will deal impact damage.");
+                Context.Respond($"[GridDefender] Result: [MISSILE] (Damage Allowed!). {blocks} blocks @ {speed:F1} m/s meets missile criteria and will deal impact damage.");
             }
             else
             {
-                Context.Respond($"[GridDefender] Result: 🛡️ SHIP (Protected from Crash/Ramming). {blocks} blocks does not match missile criteria, so ramming/crash damage is blocked.");
+                Context.Respond($"[GridDefender] Result: [PROTECTED] (Protected from Crash/Ramming). {blocks} blocks does not match missile criteria, so ramming/crash damage is blocked.");
             }
         }
 
@@ -123,8 +118,8 @@ namespace GVK.GridDefender.Commands
             sb.AppendLine($"Small Missile Blocks: {cfg.SmallGridMissileMinBlocks} - {cfg.SmallGridMissileMaxBlocks}");
             sb.AppendLine($"Missile Min Velocity: {cfg.MissileMinVelocity:F1} m/s");
             sb.AppendLine($"Protect Ramming: {cfg.ProtectShipsAgainstRamming} | Protect Voxels: {cfg.ProtectShipsAgainstVoxels}");
-            sb.AppendLine($"Protect Stations: {cfg.ProtectStaticGrids} | Protect Subgrids: {cfg.ProtectSubgrids}");
-            sb.AppendLine($"Protect Floating Debris: {cfg.ProtectAgainstFloatingObjects}");
+            sb.AppendLine($"Suppress Voxel Cutouts: {cfg.SuppressAllVoxelExplosionDamage} | Protect Stations: {cfg.ProtectStaticGrids}");
+            sb.AppendLine($"Protect Subgrids: {cfg.ProtectSubgrids} | Protect Floating Debris: {cfg.ProtectAgainstFloatingObjects}");
             sb.AppendLine($"Min Driving Speed (Safe Docking): {cfg.MinDrivingVelocity:F1} m/s");
             sb.AppendLine($"Max Velocity Limit: {cfg.MaxDeformationVelocity:F1} m/s");
             sb.AppendLine($"Anti-Clang: {cfg.EnableAntiClang} (Damping: {cfg.ImpactVelocityDamping:F2}, Threshold: {cfg.AntiClangVibrationThreshold} frames)");
@@ -151,13 +146,16 @@ namespace GVK.GridDefender.Commands
             sb.AppendLine("=== Grid Defender Telemetry ===");
             sb.AppendLine($"Total Evaluated: {stats.TotalEvaluated:N0}");
             sb.AppendLine($"Crashes Blocked: {stats.TotalBlocked:N0} ({stats.BlockRatio:F1}%)");
-            sb.AppendLine($"🚀 Missile Impacts Allowed: {stats.MissileHitsAllowed:N0}");
-            sb.AppendLine($"⚡ Clang Vibrations Arrested: {stats.ClangVibrationsArrested:N0}");
-            sb.AppendLine($"🧲 Grids Separated (Push-Apart): {stats.GridsSeparated:N0}");
-            sb.AppendLine($"🛡️ Ship Ramming Blocked: {stats.RammingBlocked:N0}");
-            sb.AppendLine($"🏔️ Voxel Crashes Blocked: {stats.VoxelCrashesBlocked:N0}");
-            sb.AppendLine($"⚙️ Subgrid Collisions Blocked: {stats.SubgridCollisionsBlocked:N0}");
-            sb.AppendLine($"⏱️ Cooldown Throttled: {stats.CooldownThrottled:N0}");
+            sb.AppendLine($"[MISSILE] Impacts Allowed: {stats.MissileHitsAllowed:N0}");
+            sb.AppendLine($"[CLANG] Vibrations Arrested: {stats.ClangVibrationsArrested:N0}");
+            sb.AppendLine($"[PUSH-APART] Grids Separated: {stats.GridsSeparated:N0}");
+            sb.AppendLine($"[RAMMING] Ship Ramming Blocked: {stats.RammingBlocked:N0}");
+            sb.AppendLine($"[TERRAIN] Voxel Crashes Blocked: {stats.VoxelCrashesBlocked:N0}");
+            sb.AppendLine($"[SUBGRID] Subgrid Collisions Blocked: {stats.SubgridCollisionsBlocked:N0}");
+            sb.AppendLine($"[DOCKING] Safe Docking / Low-Speed Blocked: {stats.LowSpeedBlocked:N0}");
+            sb.AppendLine($"[STATION] Station Crashes Blocked: {stats.StationBlocked:N0}");
+            sb.AppendLine($"[DEBRIS] Floating Debris Blocked: {stats.DebrisBlocked:N0}");
+            sb.AppendLine($"[COOLDOWN] Cooldown Throttled: {stats.CooldownThrottled:N0}");
 
             Context.Respond(sb.ToString());
         }
@@ -206,7 +204,7 @@ namespace GVK.GridDefender.Commands
 
             Plugin.Config.ProtectShipsAgainstVoxels = !Plugin.Config.ProtectShipsAgainstVoxels;
             Plugin.SaveConfig();
-            Context.Respond($"Voxel Collision Protection is now {(Plugin.Config.ProtectShipsAgainstVoxels ? "ENABLED (Ships will NOT deform on voxels/asteroids)" : "DISABLED (Ships WILL take collision damage on voxels/asteroids)")}.");
+            Context.Respond($"Voxel Collision Protection is now {(Plugin.Config.ProtectShipsAgainstVoxels ? "ENABLED (Ships will NOT take impact damage on voxels/asteroids)" : "DISABLED (Ships WILL take collision damage on voxels/asteroids)")}.");
         }
 
         /// <summary>
@@ -288,6 +286,11 @@ namespace GVK.GridDefender.Commands
                     case "protectvoxels":
                     case "voxels":
                         cfg.ProtectShipsAgainstVoxels = bool.Parse(value);
+                        break;
+                    case "suppresscutouts":
+                    case "suppressallvoxelexplosiondamage":
+                    case "suppressvoxels":
+                        cfg.SuppressAllVoxelExplosionDamage = bool.Parse(value);
                         break;
                     case "protectstations":
                     case "protectstaticgrids":

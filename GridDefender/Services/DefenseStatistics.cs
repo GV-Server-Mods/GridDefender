@@ -15,6 +15,9 @@ namespace GVK.GridDefender.Services
         private long _rammingBlocked;
         private long _voxelCrashesBlocked;
         private long _subgridCollisionsBlocked;
+        private long _lowSpeedBlocked;
+        private long _stationBlocked;
+        private long _debrisBlocked;
         private long _cooldownThrottled;
         private long _clangVibrationsArrested;
         private long _gridsSeparated;
@@ -55,6 +58,21 @@ namespace GVK.GridDefender.Services
         public long SubgridCollisionsBlocked => Interlocked.Read(ref _subgridCollisionsBlocked);
 
         /// <summary>
+        /// Total low-speed driving and safe docking bumps blocked (below MinDrivingVelocity).
+        /// </summary>
+        public long LowSpeedBlocked => Interlocked.Read(ref _lowSpeedBlocked);
+
+        /// <summary>
+        /// Total non-missile collisions with static stations blocked.
+        /// </summary>
+        public long StationBlocked => Interlocked.Read(ref _stationBlocked);
+
+        /// <summary>
+        /// Total loose floating debris and ore impacts blocked.
+        /// </summary>
+        public long DebrisBlocked => Interlocked.Read(ref _debrisBlocked);
+
+        /// <summary>
         /// Total deformations throttled by cooldown frames.
         /// </summary>
         public long CooldownThrottled => Interlocked.Read(ref _cooldownThrottled);
@@ -92,13 +110,23 @@ namespace GVK.GridDefender.Services
         /// <summary>
         /// Increments blocked crash counters with granular category tracking.
         /// </summary>
-        public void IncrementBlocked(bool isRamming = false, bool isVoxel = false, bool isSubgrid = false, bool isCooldown = false)
+        public void IncrementBlocked(
+            bool isRamming = false,
+            bool isVoxel = false,
+            bool isSubgrid = false,
+            bool isCooldown = false,
+            bool isLowSpeed = false,
+            bool isStation = false,
+            bool isDebris = false)
         {
             Interlocked.Increment(ref _totalBlocked);
             if (isRamming) Interlocked.Increment(ref _rammingBlocked);
             if (isVoxel) Interlocked.Increment(ref _voxelCrashesBlocked);
             if (isSubgrid) Interlocked.Increment(ref _subgridCollisionsBlocked);
             if (isCooldown) Interlocked.Increment(ref _cooldownThrottled);
+            if (isLowSpeed) Interlocked.Increment(ref _lowSpeedBlocked);
+            if (isStation) Interlocked.Increment(ref _stationBlocked);
+            if (isDebris) Interlocked.Increment(ref _debrisBlocked);
         }
 
         /// <summary>
@@ -139,6 +167,9 @@ namespace GVK.GridDefender.Services
             OnPropertyChanged(nameof(RammingBlocked));
             OnPropertyChanged(nameof(VoxelCrashesBlocked));
             OnPropertyChanged(nameof(SubgridCollisionsBlocked));
+            OnPropertyChanged(nameof(LowSpeedBlocked));
+            OnPropertyChanged(nameof(StationBlocked));
+            OnPropertyChanged(nameof(DebrisBlocked));
             OnPropertyChanged(nameof(CooldownThrottled));
             OnPropertyChanged(nameof(ClangVibrationsArrested));
             OnPropertyChanged(nameof(GridsSeparated));
@@ -156,6 +187,9 @@ namespace GVK.GridDefender.Services
             Interlocked.Exchange(ref _rammingBlocked, 0);
             Interlocked.Exchange(ref _voxelCrashesBlocked, 0);
             Interlocked.Exchange(ref _subgridCollisionsBlocked, 0);
+            Interlocked.Exchange(ref _lowSpeedBlocked, 0);
+            Interlocked.Exchange(ref _stationBlocked, 0);
+            Interlocked.Exchange(ref _debrisBlocked, 0);
             Interlocked.Exchange(ref _cooldownThrottled, 0);
             Interlocked.Exchange(ref _clangVibrationsArrested, 0);
             Interlocked.Exchange(ref _gridsSeparated, 0);

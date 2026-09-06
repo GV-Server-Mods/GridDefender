@@ -67,11 +67,11 @@ namespace GVK.GridDefender
         {
             try
             {
-                var patchManager = Torch.Managers.GetManager(typeof(PatchManager)) as PatchManager;
-                if (patchManager != null)
+                if (Torch.Managers.GetManager(typeof(PatchManager)) is PatchManager patchManager)
                 {
                     var ctx = patchManager.AcquireContext();
                     MyGridPhysicsPatch.Patch(ctx);
+                    MyExplosionPatch.Patch(ctx);
                     patchManager.Commit();
                     Log.Info("[GridDefender] Torch patches registered successfully.");
                 }
@@ -131,7 +131,7 @@ namespace GVK.GridDefender
         /// </summary>
         public UserControl GetControl()
         {
-            return _control ?? (_control = new GridDefenderControl(this));
+            return _control ??= new GridDefenderControl(this);
         }
 
         /// <summary>
@@ -139,20 +139,15 @@ namespace GVK.GridDefender
         /// </summary>
         public override void Dispose()
         {
-            try
-            {
-                SaveConfig();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "[GridDefender] Error saving config during Dispose.");
-            }
+            SaveConfig();
+            Engine?.Dispose();
+            DeformationDefenseEngine.RestoreVoxelFakes();
 
-            base.Dispose();
             _control = null;
             Engine = null;
             Statistics = null;
             Instance = null;
+            base.Dispose();
         }
     }
 }

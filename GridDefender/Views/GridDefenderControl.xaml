@@ -32,6 +32,22 @@
             <Setter Property="Margin" Value="5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
+        <Style TargetType="ToolTip">
+            <Setter Property="MaxWidth" Value="380"/>
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="#F1F1F1"/>
+            <Setter Property="BorderBrush" Value="#007ACC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="15">
@@ -66,11 +82,12 @@
                         <!-- Quick Overview Banner -->
                         <Border Background="#1F2937" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="💡 How GridDefender Works:" FontWeight="Bold" Foreground="#60A5FA" Margin="0,0,0,4"/>
-                                <TextBlock Text="• 🚀 Missiles (PMWs): Grids matching missile block counts &amp; min speed WILL deal full impact damage." Foreground="#D1D5DB" TextWrapping="Wrap"/>
-                                <TextBlock Text="• 🛡️ Ships &amp; Rovers: Grids larger than missiles are PROTECTED from crash, ramming, and driving damage." Foreground="#D1D5DB" TextWrapping="Wrap"/>
-                                <TextBlock Text="• ⚡ Anti-Clang: Automatically absorbs kinetic energy and stops continuous vibration/phasing loops." Foreground="#D1D5DB" TextWrapping="Wrap"/>
-                                <TextBlock Text="• 🧲 Push-Apart: Automatically separates grids if they get stuck or phase inside terrain/each other." Foreground="#D1D5DB" TextWrapping="Wrap"/>
+                                <TextBlock Text="💡 How GridDefender Works (Zero-Cost Damage Short-Circuit):" FontWeight="Bold" Foreground="#60A5FA" Margin="0,0,0,4"/>
+                                <TextBlock Text="• ⚡ Prefix Interception: Hooks Keen's internal MyGridPhysics.PerformDeformation BEFORE expensive bone deformation, block health math, and mesh recalculations run. Non-missiles abort in ~0.002ms." Foreground="#D1D5DB" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                <TextBlock Text="• 🚀 Missiles (PMWs): Valid missiles bypass the block, executing 100% full vanilla deformation &amp; kinetic damage. Spent remnants auto-transition to Anti-Clang." Foreground="#D1D5DB" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                <TextBlock Text="• 🛡️ Ships &amp; Rovers: Grids larger than missiles skip deformation entirely—ships bounce with natural Havok momentum without CPU lag spikes or armor crumpling." Foreground="#D1D5DB" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                <TextBlock Text="• 🏔️ Voxel Preservation: Blocks all collision gouges &amp; explosion craters across the server. Hand &amp; ship drill mining remains 100% functional." Foreground="#D1D5DB" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                <TextBlock Text="• 🧲 Anti-Clang &amp; Push-Apart: Dampens continuous contact vibration loops and nudges stuck grids apart to preserve 60 TPS." Foreground="#D1D5DB" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
@@ -87,17 +104,22 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <CheckBox Grid.Row="0" Grid.ColumnSpan="2" Content="Enable GridDefender Protection" IsChecked="{Binding Config.Enabled}" FontWeight="Bold"/>
-                                <CheckBox Grid.Row="1" Grid.ColumnSpan="2" Content="Enable Debug Logging (Log missile hits, anti-clang &amp; push-apart to Torch console)" IsChecked="{Binding Config.EnableDebugLogging}"/>
+                                <CheckBox Grid.Row="0" Grid.ColumnSpan="2" Content="Enable GridDefender Protection" IsChecked="{Binding Config.Enabled}" FontWeight="Bold"
+                                          ToolTip="Master toggle for Grid Defender collision protection, anti-clang damping, and grid separation."/>
+                                <CheckBox Grid.Row="1" Grid.ColumnSpan="2" Content="Enable Debug Logging (Log missile hits, anti-clang &amp; push-apart to Torch console)" IsChecked="{Binding Config.EnableDebugLogging}"
+                                          ToolTip="Logs missile hits, anti-clang damping, and push-apart actions to the Torch console."/>
                                 
-                                <Label Grid.Row="2" Grid.Column="0" Content="Allowed Damage Multiplier (0.0 to 1.0):"/>
+                                <Label Grid.Row="2" Grid.Column="0" Content="Allowed Impact Damage Multiplier (0.0 to 1.0):"
+                                       ToolTip="Damage multiplier when impact damage is permitted (e.g., missiles). 1.0 = full damage, 0.0 = zero damage."/>
                                 <Grid Grid.Row="2" Grid.Column="1">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="60"/>
                                     </Grid.ColumnDefinitions>
-                                    <Slider Grid.Column="0" Minimum="0.0" Maximum="1.0" Value="{Binding Config.DeformationMultiplier}" SmallChange="0.05" LargeChange="0.1" VerticalAlignment="Center" Margin="5"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Config.DeformationMultiplier, StringFormat={}{0:F2}}" Width="50" HorizontalContentAlignment="Center"/>
+                                    <Slider Grid.Column="0" Minimum="0.0" Maximum="1.0" Value="{Binding Config.DeformationMultiplier}" SmallChange="0.05" LargeChange="0.1" VerticalAlignment="Center" Margin="5"
+                                            ToolTip="Damage multiplier when impact damage is permitted (e.g., missiles). 1.0 = full damage, 0.0 = zero damage."/>
+                                    <TextBox Grid.Column="1" Text="{Binding Config.DeformationMultiplier, StringFormat={}{0:F2}}" Width="50" HorizontalContentAlignment="Center"
+                                             ToolTip="Damage multiplier when impact damage is permitted (e.g., missiles). 1.0 = full damage, 0.0 = zero damage."/>
                                 </Grid>
                             </Grid>
                         </GroupBox>
@@ -105,9 +127,11 @@
                         <!-- Anti-Clang & Phasing Prevention -->
                         <GroupBox Header="⚡ Anti-Clang &amp; Phasing Prevention">
                             <StackPanel>
-                                <TextBlock Text="Prevents non-deforming grids from phasing into terrain/each other and stops violent physics vibration loops." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
-                                <CheckBox Content="Enable Anti-Clang &amp; Kinetic Absorption System" IsChecked="{Binding Config.EnableAntiClang}" FontWeight="SemiBold"/>
-                                <CheckBox Content="Stop Clang Death Spins (Zero out extreme rotational velocity)" IsChecked="{Binding Config.StopClangSpinning}"/>
+                                <TextBlock Text="Prevents non-damaging colliding grids from phasing into terrain/each other and stops violent physics vibration loops." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
+                                <CheckBox Content="Enable Anti-Clang &amp; Kinetic Absorption System" IsChecked="{Binding Config.EnableAntiClang}" FontWeight="SemiBold"
+                                          ToolTip="Absorbs excess kinetic energy on non-damaging collisions to prevent voxel phasing, rubberbanding, and Havok physics loops."/>
+                                <CheckBox Content="Stop Clang Death Spins (Zero out extreme rotational velocity)" IsChecked="{Binding Config.StopClangSpinning}"
+                                          ToolTip="Instantly zeros out extreme rotational spin (> 5 rad/s) caused by Havok subgrid glitches before grids rip apart."/>
                                 <Grid Margin="0,5,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="240"/>
@@ -118,18 +142,23 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Label Grid.Row="0" Grid.Column="0" Content="Impact Velocity Damping (0.0 to 1.0):"/>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Impact Velocity Damping (0.0 to 1.0):"
+                                           ToolTip="Velocity absorbed on protected collisions (0.0 = full bounce, 0.5 = 50% absorbed, 1.0 = dead stop). Stops terrain tunneling."/>
                                     <Grid Grid.Row="0" Grid.Column="1">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
-                                        <Slider Grid.Column="0" Minimum="0.0" Maximum="1.0" Value="{Binding Config.ImpactVelocityDamping}" SmallChange="0.05" LargeChange="0.1" VerticalAlignment="Center" Margin="5"/>
-                                        <TextBox Grid.Column="1" Text="{Binding Config.ImpactVelocityDamping, StringFormat={}{0:F2}}" Width="50" HorizontalContentAlignment="Center"/>
+                                        <Slider Grid.Column="0" Minimum="0.0" Maximum="1.0" Value="{Binding Config.ImpactVelocityDamping}" SmallChange="0.05" LargeChange="0.1" VerticalAlignment="Center" Margin="5"
+                                                ToolTip="Velocity absorbed on protected collisions (0.0 = full bounce, 0.5 = 50% absorbed, 1.0 = dead stop). Stops terrain tunneling."/>
+                                        <TextBox Grid.Column="1" Text="{Binding Config.ImpactVelocityDamping, StringFormat={}{0:F2}}" Width="50" HorizontalContentAlignment="Center"
+                                                 ToolTip="Velocity absorbed on protected collisions (0.0 = full bounce, 0.5 = 50% absorbed, 1.0 = dead stop). Stops terrain tunneling."/>
                                     </Grid>
 
-                                    <Label Grid.Row="1" Grid.Column="0" Content="Continuous Contact Threshold (Frames):"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.AntiClangVibrationThreshold}"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Continuous Contact Threshold (Frames):"
+                                           ToolTip="Consecutive collision frames before aggressive damping engages to stop physics vibrations and grinding."/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.AntiClangVibrationThreshold}"
+                                             ToolTip="Consecutive collision frames before aggressive damping engages to stop physics vibrations and grinding."/>
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
@@ -138,7 +167,8 @@
                         <GroupBox Header="🧲 Active Push-Apart (Anti-Stuck Separation)">
                             <StackPanel>
                                 <TextBlock Text="Gently nudges overlapping grids apart if they remain persistently stuck or phased together." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
-                                <CheckBox Content="Enable Active Push-Apart Separation" IsChecked="{Binding Config.EnablePushApart}" FontWeight="SemiBold"/>
+                                <CheckBox Content="Enable Active Push-Apart Separation" IsChecked="{Binding Config.EnablePushApart}" FontWeight="SemiBold"
+                                          ToolTip="Gently translates grids apart if they remain stuck or phased together in continuous contact."/>
                                 <Grid Margin="0,5,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="240"/>
@@ -149,11 +179,15 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Label Grid.Row="0" Grid.Column="0" Content="Push-Apart Threshold (Frames):"/>
-                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.PushApartThreshold}"/>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Push-Apart Threshold (Frames):"
+                                           ToolTip="Consecutive collision frames (~25 frames = 0.4s) required before triggering separation."/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.PushApartThreshold}"
+                                             ToolTip="Consecutive collision frames (~25 frames = 0.4s) required before triggering separation."/>
 
-                                    <Label Grid.Row="1" Grid.Column="0" Content="Push-Apart Distance (Meters):"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.PushApartDistance, StringFormat={}{0:F2}}"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Push-Apart Distance (Meters):"
+                                           ToolTip="Distance in meters (0.2 to 2.0m) to gently nudge stuck grids apart along the contact normal."/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.PushApartDistance, StringFormat={}{0:F2}}"
+                                             ToolTip="Distance in meters (0.2 to 2.0m) to gently nudge stuck grids apart along the contact normal."/>
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
@@ -161,8 +195,9 @@
                         <!-- Missile (PMW) Settings -->
                         <GroupBox Header="🚀 Missile (PMW) Allowance Settings">
                             <StackPanel>
-                                <TextBlock Text="Grids within these block limits and moving faster than min velocity are recognized as missiles and deal damage." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
-                                <CheckBox Content="Allow Player-Made Missile (PMW) Impact Damage" IsChecked="{Binding Config.AllowMissileDamage}" FontWeight="SemiBold" Margin="5,0,0,8"/>
+                                <TextBlock Text="Grids within these block limits and moving faster than min velocity are recognized as missiles and deal impact damage." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
+                                <CheckBox Content="Allow Player-Made Missile (PMW) Impact Damage" IsChecked="{Binding Config.AllowMissileDamage}" FontWeight="SemiBold" Margin="5,0,0,8"
+                                          ToolTip="Allows recognized player-made missiles to deal full impact damage when striking targets."/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="240"/>
@@ -176,20 +211,30 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Label Grid.Row="0" Grid.Column="0" Content="Large Missile Min Blocks:"/>
-                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.LargeGridMissileMinBlocks}"/>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Large Missile Min Blocks:"
+                                           ToolTip="Minimum block count for a large grid missile. Filters out loose debris or single blocks."/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.LargeGridMissileMinBlocks}"
+                                             ToolTip="Minimum block count for a large grid missile. Filters out loose debris or single blocks."/>
 
-                                    <Label Grid.Row="1" Grid.Column="0" Content="Large Missile Max Blocks:"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.LargeGridMissileMaxBlocks}"/>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="Large Missile Max Blocks:"
+                                           ToolTip="Maximum block count for a large grid missile. Grids above this count are protected as ships."/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.LargeGridMissileMaxBlocks}"
+                                             ToolTip="Maximum block count for a large grid missile. Grids above this count are protected as ships."/>
 
-                                    <Label Grid.Row="2" Grid.Column="0" Content="Small Missile Min Blocks:"/>
-                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.SmallGridMissileMinBlocks}"/>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Small Missile Min Blocks:"
+                                           ToolTip="Minimum block count for a small grid missile. Default: 4 blocks."/>
+                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.SmallGridMissileMinBlocks}"
+                                             ToolTip="Minimum block count for a small grid missile. Default: 4 blocks."/>
 
-                                    <Label Grid.Row="3" Grid.Column="0" Content="Small Missile Max Blocks:"/>
-                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Config.SmallGridMissileMaxBlocks}"/>
+                                    <Label Grid.Row="3" Grid.Column="0" Content="Small Missile Max Blocks:"
+                                           ToolTip="Maximum block count for a small grid missile. Grids above this count are protected as ships/rovers."/>
+                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Config.SmallGridMissileMaxBlocks}"
+                                             ToolTip="Maximum block count for a small grid missile. Grids above this count are protected as ships/rovers."/>
 
-                                    <Label Grid.Row="4" Grid.Column="0" Content="Missile Min Velocity (m/s):"/>
-                                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Config.MissileMinVelocity, StringFormat={}{0:F1}}"/>
+                                    <Label Grid.Row="4" Grid.Column="0" Content="Missile Min Velocity (m/s):"
+                                           ToolTip="Minimum impact velocity (m/s) required for a missile to deal damage. Slower bumps deal no damage."/>
+                                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Config.MissileMinVelocity, StringFormat={}{0:F1}}"
+                                             ToolTip="Minimum impact velocity (m/s) required for a missile to deal damage. Slower bumps deal no damage."/>
                                 </Grid>
                             </StackPanel>
                         </GroupBox>
@@ -198,16 +243,30 @@
                         <GroupBox Header="🛡️ Ship &amp; Rover Ramming &amp; Driving Protection">
                             <StackPanel>
                                 <TextBlock Text="Grids larger than missiles are protected against accidental terrain collisions and ship-to-ship ramming." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
-                                <CheckBox Content="Protect Ships From Ship-on-Ship Ramming" IsChecked="{Binding Config.ProtectShipsAgainstRamming}"/>
-                                <CheckBox Content="Protect Ships &amp; Rovers From Voxel (Planet/Asteroid) Crashes" IsChecked="{Binding Config.ProtectShipsAgainstVoxels}"/>
-                                <CheckBox Content="Protect Against Floating Objects / Debris / Ores" IsChecked="{Binding Config.ProtectAgainstFloatingObjects}"/>
-                                <CheckBox Content="Protect Static Grids (Stations) From Ramming" IsChecked="{Binding Config.ProtectStaticGrids}"/>
-                                <CheckBox Content="Protect Subgrids / Mechanicals (Pistons, Rotors, Hinges) from Clang" IsChecked="{Binding Config.ProtectSubgrids}"/>
+                                <CheckBox Content="Protect Ships From Ship-on-Ship Ramming" IsChecked="{Binding Config.ProtectShipsAgainstRamming}"
+                                          ToolTip="Blocks impact damage when full-sized ships or rovers collide with each other, preventing grief ramming."/>
+                                <CheckBox Content="Protect Ships &amp; Rovers From Voxel (Planet/Asteroid) Crashes" IsChecked="{Binding Config.ProtectShipsAgainstVoxels}"
+                                          ToolTip="Blocks impact damage when rovers or ships hit terrain, dunes, or asteroids. Keeps rovers driving smoothly."/>
+                                <CheckBox Content="Protect Against Floating Objects / Debris / Ores" IsChecked="{Binding Config.ProtectAgainstFloatingObjects}"
+                                          ToolTip="Suppresses impact damage from floating ores, dropped items, and detached debris."/>
+                                <CheckBox Content="Protect Static Grids (Stations) From Ramming" IsChecked="{Binding Config.ProtectStaticGrids}"
+                                          ToolTip="Suppresses impact damage on stations and anchored static structures when rammed."/>
+                                <CheckBox Content="Protect Subgrids / Mechanicals (Pistons, Rotors, Hinges) from Clang" IsChecked="{Binding Config.ProtectSubgrids}"
+                                          ToolTip="Suppresses self-collision damage between subgrids (rotors, hinges, pistons) to stop Clang chain reactions."/>
                             </StackPanel>
                         </GroupBox>
 
-                        <!-- Thresholds & Performance -->
-                        <GroupBox Header="⚙️ Safety Thresholds &amp; Cooldown">
+                        <!-- Voxel & Terrain Protection -->
+                        <GroupBox Header="🏔️ Voxel &amp; Terrain Protection">
+                            <StackPanel>
+                                <TextBlock Text="Universal terrain preservation: Stops explosive &amp; collision craters from gouging roads while preserving mining." Foreground="#9CA3AF" FontSize="11" Margin="5,0,0,8"/>
+                                <CheckBox Content="Suppress Explosion &amp; Crash Voxel Cutouts" IsChecked="{Binding Config.SuppressAllVoxelExplosionDamage}" FontWeight="SemiBold"
+                                          ToolTip="Disables voxel crater cutouts from explosions, warheads, weapons, and crashes. Drill mining (hand &amp; ship drills) remains 100% operational!"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Thresholds & Speed Gates -->
+                        <GroupBox Header="⚙️ Speed Gates &amp; Rate Limits (Ships &amp; Rovers)">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="240"/>
@@ -219,14 +278,20 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <Label Grid.Row="0" Grid.Column="0" Content="Min Driving Velocity (m/s, Safe Docking):"/>
-                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.MinDrivingVelocity, StringFormat={}{0:F1}}"/>
+                                <Label Grid.Row="0" Grid.Column="0" Content="Min Driving Velocity (m/s, Safe Harbor):"
+                                       ToolTip="Collisions below this speed never deal damage. Allows slow docking, parking, and gentle rover maneuvering."/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Config.MinDrivingVelocity, StringFormat={}{0:F1}}"
+                                         ToolTip="Collisions below this speed never deal damage. Allows slow docking, parking, and gentle rover maneuvering."/>
 
-                                <Label Grid.Row="1" Grid.Column="0" Content="Max Velocity Limit (m/s, Anti-Crash):"/>
-                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.MaxDeformationVelocity, StringFormat={}{0:F1}}"/>
+                                <Label Grid.Row="1" Grid.Column="0" Content="Max Velocity Limit (m/s, Anti-Crash):"
+                                       ToolTip="Extreme-speed collisions between non-missile ships above this speed skip damage processing to prevent server lag freezes. Missiles bypass this check. 0 to disable."/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Config.MaxDeformationVelocity, StringFormat={}{0:F1}}"
+                                         ToolTip="Extreme-speed collisions between non-missile ships above this speed skip damage processing to prevent server lag freezes. Missiles bypass this check. 0 to disable."/>
 
-                                <Label Grid.Row="2" Grid.Column="0" Content="Deformation Cooldown (Frames):"/>
-                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.DeformationCooldownFrames}"/>
+                                <Label Grid.Row="2" Grid.Column="0" Content="Impact Damage Cooldown (Frames):"
+                                       ToolTip="Minimum simulation ticks (60 frames = 1s) between damage evaluations per grid during continuous contact."/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Config.DeformationCooldownFrames}"
+                                         ToolTip="Minimum simulation ticks (60 frames = 1s) between damage evaluations per grid during continuous contact."/>
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -290,6 +355,9 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <Label Grid.Row="0" Grid.Column="0" Content="🚀 Missile Impacts Allowed:"/>
@@ -310,8 +378,17 @@
                                 <Label Grid.Row="5" Grid.Column="0" Content="⚙️ Subgrid Collisions Blocked:"/>
                                 <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Statistics.SubgridCollisionsBlocked, StringFormat={}{0:N0}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="#CCCCCC"/>
 
-                                <Label Grid.Row="6" Grid.Column="0" Content="⏱️ Cooldown Throttled:"/>
-                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Statistics.CooldownThrottled, StringFormat={}{0:N0}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="#CCCCCC"/>
+                                <Label Grid.Row="6" Grid.Column="0" Content="⚓ Safe Docking / Low Speed (&lt; 5m/s):"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Statistics.LowSpeedBlocked, StringFormat={}{0:N0}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="#CCCCCC"/>
+
+                                <Label Grid.Row="7" Grid.Column="0" Content="🏛️ Station Crashes Blocked:"/>
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Statistics.StationBlocked, StringFormat={}{0:N0}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="#CCCCCC"/>
+
+                                <Label Grid.Row="8" Grid.Column="0" Content="📦 Debris &amp; Floating Objects:"/>
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Statistics.DebrisBlocked, StringFormat={}{0:N0}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="#CCCCCC"/>
+
+                                <Label Grid.Row="9" Grid.Column="0" Content="⏱️ Cooldown Throttled:"/>
+                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding Statistics.CooldownThrottled, StringFormat={}{0:N0}}" VerticalAlignment="Center" FontWeight="Bold" Foreground="#CCCCCC"/>
                             </Grid>
                         </GroupBox>
                     </StackPanel>

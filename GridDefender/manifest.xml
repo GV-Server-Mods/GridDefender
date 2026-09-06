@@ -4,6 +4,6 @@
     <Guid>bc743a7e-e3ab-44c6-ac07-132b0291f0d1</Guid>
     <Version>2.0.0.0</Version>
     <Author>GVK</Author>
-    <Description>Advanced grid deformation defense and physics performance optimizer for Space Engineers Torch servers.</Description>
+    <Description>Advanced collision impact defense, anti-ramming, and physics performance optimizer for Space Engineers Torch servers.</Description>
 </PluginManifest>
 
