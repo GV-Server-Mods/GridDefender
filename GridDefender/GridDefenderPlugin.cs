@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Windows.Controls;
 using GVK.GridDefender.Config;
 using GVK.GridDefender.Engine;
@@ -21,6 +22,8 @@ namespace GVK.GridDefender
     public class GridDefenderPlugin : TorchPluginBase, IWpfPlugin
     {
         public static readonly ILogger Log = LogManager.GetLogger("GVK.GridDefender");
+        private readonly object _configSaveLock = new();
+        private int _tickCount;
 
         private Persistent<GridDefenderConfig> _config;
         private GridDefenderControl _control;
@@ -112,17 +115,56 @@ namespace GVK.GridDefender
 
         /// <summary>
         /// Saves active runtime configuration to the persistent config file.
+        /// When async is true, disk I/O is offloaded to the thread pool to protect sim-speed.
         /// </summary>
-        public void SaveConfig()
+        public void SaveConfig(bool async = true)
         {
-            try
+            if (async)
             {
-                _config?.Save();
-                Log.Info("[GridDefender] Configuration saved.");
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    lock (_configSaveLock)
+                    {
+                        try
+                        {
+                            _config?.Save();
+                            Log.Info("[GridDefender] Configuration saved.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "[GridDefender] Failed to save configuration file!");
+                        }
+                    }
+                });
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, "[GridDefender] Failed to save configuration file!");
+                lock (_configSaveLock)
+                {
+                    try
+                    {
+                        _config?.Save();
+                        Log.Info("[GridDefender] Configuration saved.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "[GridDefender] Failed to save configuration file!");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Periodically executed on the Torch simulation loop.
+        /// Sweeps expired cache entries on a cold stepped 1000-tick interval.
+        /// </summary>
+        public override void Update()
+        {
+            base.Update();
+            if (++_tickCount >= 1000)
+            {
+                _tickCount = 0;
+                Engine?.SweepCaches();
             }
         }
 
@@ -139,7 +181,7 @@ namespace GVK.GridDefender
         /// </summary>
         public override void Dispose()
         {
-            SaveConfig();
+            SaveConfig(async: false);
             Engine?.Dispose();
             DeformationDefenseEngine.RestoreVoxelFakes();
 

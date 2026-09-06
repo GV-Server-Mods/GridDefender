@@ -56,6 +56,7 @@ namespace GVK.GridDefender.Engine
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _stats = stats ?? throw new ArgumentNullException(nameof(stats));
             SyncVoxelFakes();
+            MyEntities.OnEntityRemove += OnEntityRemoved;
         }
 
         /// <summary>
@@ -120,7 +121,7 @@ namespace GVK.GridDefender.Engine
                 {
                     if (_config.EnableDebugLogging && ShouldLog(_lastSubgridLogFrames, grid.EntityId ^ otherGrid.EntityId, currentFrame, 120))
                     {
-                        Log.Info($"[GridDefender] ⚙️ Subgrid Protected: Blocked collision between '{grid.DisplayName}' and '{otherGrid.DisplayName}'.");
+                        Log.Info($"[GridDefender] [SUBGRID] Protected: Blocked collision between '{grid.DisplayName}' and '{otherGrid.DisplayName}'.");
                     }
                     ApplyAntiClang(grid, physics, otherEntity);
                     _stats.IncrementBlocked(isSubgrid: true);
@@ -187,14 +188,7 @@ namespace GVK.GridDefender.Engine
 
                         if (_config.EnableDebugLogging)
                         {
-                            System.Threading.Tasks.Task.Delay(500).ContinueWith(_ =>
-                            {
-                                if (_config.EnableDebugLogging)
-                                {
-                                    int count = engagement.ImpactCount;
-                                    Log.Info($"[GridDefender] 🚀 Missile Hit ALLOWED! '{engagement.MissileName}' struck '{engagement.TargetName}' at {engagement.InitialSpeed:F1} m/s (x{count}).");
-                                }
-                            });
+                            Log.Info($"[GridDefender] [MISSILE] Impact ALLOWED: '{engagement.MissileName}' struck '{engagement.TargetName}' at {engagement.InitialSpeed:F1} m/s.");
                         }
                     }
 
@@ -218,7 +212,7 @@ namespace GVK.GridDefender.Engine
             {
                 if (_config.EnableDebugLogging && impactSpeed >= 1.5f && ShouldLog(_lastRammingLogFrames, grid.EntityId, currentFrame, 120))
                 {
-                    Log.Info($"[GridDefender] ⚓ Safe Docking: Suppressed low-speed bump on '{grid.DisplayName}' ({impactSpeed:F1} m/s < {_config.MinDrivingVelocity:F1} m/s).");
+                    Log.Info($"[GridDefender] [DOCKING] Safe Docking: Suppressed low-speed bump on '{grid.DisplayName}' ({impactSpeed:F1} m/s < {_config.MinDrivingVelocity:F1} m/s).");
                 }
                 ApplyAntiClang(grid, physics, otherEntity);
                 _stats.IncrementBlocked(isLowSpeed: true);
@@ -230,7 +224,7 @@ namespace GVK.GridDefender.Engine
             {
                 if (_config.EnableDebugLogging && ShouldLog(_lastExtremeSpeedLogFrames, grid.EntityId, currentFrame, 60))
                 {
-                    Log.Warn($"[GridDefender] ⚠️ Speed Limit: Suppressed collision on '{grid.DisplayName}' ({impactSpeed:F1} m/s > {_config.MaxDeformationVelocity:F1} m/s limit).");
+                    Log.Warn($"[GridDefender] [SPEED] Limit: Suppressed collision on '{grid.DisplayName}' ({impactSpeed:F1} m/s > {_config.MaxDeformationVelocity:F1} m/s limit).");
                 }
                 ApplyImpactDamping(physics, grid.IsStatic);
                 ApplyAntiClang(grid, physics, otherEntity);
@@ -247,7 +241,7 @@ namespace GVK.GridDefender.Engine
                 {
                     string stationName = grid.IsStatic ? grid.DisplayName : otherEntity.DisplayName;
                     string strikingName = grid.IsStatic ? otherEntity.DisplayName : grid.DisplayName;
-                    Log.Info($"[GridDefender] 🏛️ Station Protected: '{strikingName}' struck static station '{stationName}' at {impactSpeed:F1} m/s (damage suppressed).");
+                    Log.Info($"[GridDefender] [STATION] Protected: '{strikingName}' struck static station '{stationName}' at {impactSpeed:F1} m/s (damage suppressed).");
                 }
                 if (grid.IsStatic)
                 {
@@ -273,7 +267,7 @@ namespace GVK.GridDefender.Engine
                 {
                     if (_config.EnableDebugLogging && ShouldLog(_lastVoxelLogFrames, grid.EntityId, currentFrame, 60))
                     {
-                        Log.Info($"[GridDefender] 🏔️ Terrain Crash Blocked: '{grid.DisplayName}' ({grid.BlocksCount} blocks) hit voxels at {impactSpeed:F1} m/s (damage suppressed).");
+                        Log.Info($"[GridDefender] [VOXEL] Terrain Crash Blocked: '{grid.DisplayName}' ({grid.BlocksCount} blocks) hit voxels at {impactSpeed:F1} m/s (damage suppressed).");
                     }
                     ApplyImpactDamping(physics, grid.IsStatic);
                     ApplyAntiClang(grid, physics, otherEntity);
@@ -288,7 +282,7 @@ namespace GVK.GridDefender.Engine
             {
                 if (_config.EnableDebugLogging && ShouldLog(_lastRammingLogFrames, grid.EntityId ^ otherEntity.EntityId, currentFrame, 60))
                 {
-                    Log.Info($"[GridDefender] 🛡️ Ramming Blocked: '{grid.DisplayName}' ({grid.BlocksCount} blocks) hit '{otherEntity.DisplayName}' at {impactSpeed:F1} m/s (damage suppressed).");
+                    Log.Info($"[GridDefender] [RAMMING] Blocked: '{grid.DisplayName}' ({grid.BlocksCount} blocks) hit '{otherEntity.DisplayName}' at {impactSpeed:F1} m/s (damage suppressed).");
                 }
                 ApplyImpactDamping(physics, grid.IsStatic);
                 ApplyAntiClang(grid, physics, otherEntity);
@@ -325,11 +319,16 @@ namespace GVK.GridDefender.Engine
             missileGrid.OnGridSplit += OnTrackedGridSplit;
         }
 
-        private void OnTrackedGridClosed(IMyEntity entity)
+        private void OnEntityRemoved(MyEntity entity)
         {
-            if (entity == null) return;
-            long id = entity.EntityId;
+            if (entity is MyCubeGrid grid)
+            {
+                EvictGrid(grid.EntityId);
+            }
+        }
 
+        private void EvictGrid(long id)
+        {
             _activeMissiles.TryRemove(id, out _);
             _lastDeformationFrames.TryRemove(id, out _);
             _consecutiveContactFrames.TryRemove(id, out _);
@@ -337,7 +336,14 @@ namespace GVK.GridDefender.Engine
             _lastRammingLogFrames.TryRemove(id, out _);
             _lastVoxelLogFrames.TryRemove(id, out _);
             _lastStationLogFrames.TryRemove(id, out _);
+            _lastSubgridLogFrames.TryRemove(id, out _);
             _lastExtremeSpeedLogFrames.TryRemove(id, out _);
+        }
+
+        private void OnTrackedGridClosed(IMyEntity entity)
+        {
+            if (entity == null) return;
+            EvictGrid(entity.EntityId);
         }
 
         private void OnTrackedGridSplit(MyCubeGrid originalGrid, MyCubeGrid newGrid)
@@ -353,21 +359,15 @@ namespace GVK.GridDefender.Engine
         private void ApplyImpactDamping(MyGridPhysics physics, bool isStatic)
         {
             if (isStatic || physics == null || !_config.EnableAntiClang || _config.ImpactVelocityDamping <= 0.0f) return;
+            if (physics.Entity == null || physics.Entity.MarkedForClose || physics.Entity.Closed) return;
 
-            try
-            {
-                float factor = Math.Max(0.0f, 1.0f - (_config.ImpactVelocityDamping * 0.6f));
-                physics.LinearVelocity *= factor;
-            }
-            catch
-            {
-                // Safety guard
-            }
+            float factor = Math.Max(0.0f, 1.0f - (_config.ImpactVelocityDamping * 0.6f));
+            physics.LinearVelocity *= factor;
         }
 
         private void ApplyAntiClang(MyCubeGrid grid, MyGridPhysics physics, MyEntity otherEntity)
         {
-            if (grid == null || physics == null || !_config.EnableAntiClang) return;
+            if (grid == null || physics == null || grid.MarkedForClose || grid.Closed || !_config.EnableAntiClang) return;
 
             long gridEntityId = grid.EntityId;
             ulong currentFrame = MySandboxGame.Static?.SimulationFrameCounter ?? 0;
@@ -390,26 +390,19 @@ namespace GVK.GridDefender.Engine
             // Phase 1: Vibration & Torque Arrest (Early Clang threshold)
             if (contactCount >= _config.AntiClangVibrationThreshold)
             {
-                try
+                physics.LinearVelocity *= 0.75f;
+                physics.AngularVelocity *= 0.2f;
+
+                if (_config.StopClangSpinning && physics.AngularVelocity.LengthSquared() > 16.0f)
                 {
-                    physics.LinearVelocity *= 0.75f;
-                    physics.AngularVelocity *= 0.2f;
-
-                    if (_config.StopClangSpinning && physics.AngularVelocity.LengthSquared() > 16.0f)
-                    {
-                        physics.AngularVelocity = Vector3.Zero;
-                    }
-
-                    _stats.IncrementClangArrested();
-
-                    if (_config.EnableDebugLogging && contactCount == _config.AntiClangVibrationThreshold)
-                    {
-                        Log.Warn($"[GridDefender] ⚡ Anti-Clang Activated for '{grid.DisplayName}' ({contactCount} contact frames).");
-                    }
+                    physics.AngularVelocity = Vector3.Zero;
                 }
-                catch
+
+                _stats.IncrementClangArrested();
+
+                if (_config.EnableDebugLogging && contactCount == _config.AntiClangVibrationThreshold)
                 {
-                    // Safety guard
+                    Log.Warn($"[GridDefender] [ANTI-CLANG] Activated for '{grid.DisplayName}' ({contactCount} contact frames).");
                 }
             }
 
@@ -421,11 +414,6 @@ namespace GVK.GridDefender.Engine
             {
                 TryPushApart(grid, otherEntity);
                 _consecutiveContactFrames[gridEntityId] = 0;
-            }
-
-            if (_lastContactFrameTracker.Count > 250)
-            {
-                TrimOldFrames(currentFrame);
             }
         }
 
@@ -482,7 +470,7 @@ namespace GVK.GridDefender.Engine
 
                 if (_config.EnableDebugLogging)
                 {
-                    Log.Info($"[GridDefender] 🧲 Push-Apart Separated: Moved '{grid.DisplayName}' {distance:F2}m away from '{otherEntity.DisplayName}'.");
+                    Log.Info($"[GridDefender] [PUSH-APART] Separated: Moved '{grid.DisplayName}' {distance:F2}m away from '{otherEntity.DisplayName}'.");
                 }
             }
             catch (Exception ex)
@@ -507,11 +495,6 @@ namespace GVK.GridDefender.Engine
             ulong currentFrame = MySandboxGame.Static?.SimulationFrameCounter ?? 0;
             _lastDeformationFrames[gridEntityId] = currentFrame;
 
-            if (_lastDeformationFrames.Count > 500)
-            {
-                TrimOldFrames(currentFrame);
-            }
-
             _stats.IncrementAllowed(isMissile: isMissile);
             return true;
         }
@@ -530,15 +513,28 @@ namespace GVK.GridDefender.Engine
             return true;
         }
 
-        private static void TrimDictionary(ConcurrentDictionary<long, ulong> dict, ulong currentFrame, ulong maxAge)
+        private static void TrimDictionary(ConcurrentDictionary<long, ulong> dict, ulong currentFrame, ulong maxAge, ConcurrentDictionary<long, int> secondaryDict = null)
         {
             foreach (var kvp in dict)
             {
                 if (currentFrame > kvp.Value && (currentFrame - kvp.Value) > maxAge)
                 {
-                    dict.TryRemove(kvp.Key, out _);
+                    if (dict.TryRemove(kvp.Key, out _) && secondaryDict != null)
+                    {
+                        secondaryDict.TryRemove(kvp.Key, out _);
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Cold-path periodic cache sweep. Evicts expired missile engagements and frame trackers.
+        /// </summary>
+        public void SweepCaches(ulong? frame = null)
+        {
+            ulong currentFrame = frame ?? MySandboxGame.Static?.SimulationFrameCounter ?? 0;
+            if (currentFrame == 0) return;
+            TrimOldFrames(currentFrame);
         }
 
         private void TrimOldFrames(ulong currentFrame)
@@ -553,7 +549,7 @@ namespace GVK.GridDefender.Engine
                     }
                 }
 
-                TrimDictionary(_lastContactFrameTracker, currentFrame, 600);
+                TrimDictionary(_lastContactFrameTracker, currentFrame, 600, _consecutiveContactFrames);
                 TrimDictionary(_lastDeformationFrames, currentFrame, 600);
                 TrimDictionary(_lastRammingLogFrames, currentFrame, 600);
                 TrimDictionary(_lastVoxelLogFrames, currentFrame, 600);
@@ -561,9 +557,9 @@ namespace GVK.GridDefender.Engine
                 TrimDictionary(_lastSubgridLogFrames, currentFrame, 600);
                 TrimDictionary(_lastExtremeSpeedLogFrames, currentFrame, 600);
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort cleanup
+                Log.Warn(ex, "[GridDefender] Error while trimming expired frame tracking collections.");
             }
         }
 
@@ -576,10 +572,11 @@ namespace GVK.GridDefender.Engine
         }
 
         /// <summary>
-        /// Disposes engine resources, clears tracking collections, and restores voxel flags.
+        /// Disposes engine resources, clears tracking collections, unhooks entity events, and restores voxel flags.
         /// </summary>
         public void Dispose()
         {
+            MyEntities.OnEntityRemove -= OnEntityRemoved;
             RestoreVoxelFakes();
             _activeMissiles.Clear();
             _lastDeformationFrames.Clear();

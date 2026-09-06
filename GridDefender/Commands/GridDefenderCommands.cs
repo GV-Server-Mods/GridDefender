@@ -35,12 +35,12 @@ namespace GVK.GridDefender.Commands
             sb.AppendLine($"Status: {(cfg.Enabled ? "ENABLED" : "DISABLED")}");
             sb.AppendLine();
             sb.AppendLine("[MISSILES] (Damage Allowed):");
-            sb.AppendLine($"- Large Grid Missiles: {cfg.LargeGridMissileMinBlocks} to {cfg.LargeGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity:F1} m/s");
-            sb.AppendLine($"- Small Grid Missiles: {cfg.SmallGridMissileMinBlocks} to {cfg.SmallGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity:F1} m/s");
+            sb.AppendLine($"- Large Grid Missiles: {cfg.LargeGridMissileMinBlocks} to {cfg.LargeGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s");
+            sb.AppendLine($"- Small Grid Missiles: {cfg.SmallGridMissileMinBlocks} to {cfg.SmallGridMissileMaxBlocks} blocks @ >={cfg.MissileMinVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s");
             sb.AppendLine();
             sb.AppendLine("[SHIPS & ROVERS] (Damage Blocked / Protected):");
             sb.AppendLine($"- Ships & Debris outside missile block limits are protected against crash & ramming damage.");
-            sb.AppendLine($"- Safe Docking: All collisions < {cfg.MinDrivingVelocity:F1} m/s are protected.");
+            sb.AppendLine($"- Safe Docking: All collisions < {cfg.MinDrivingVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s are protected.");
             sb.AppendLine($"- Anti-Ramming: Ship-on-Ship ramming is {(cfg.ProtectShipsAgainstRamming ? "PROTECTED" : "Allowed")}.");
             sb.AppendLine($"- Terrain Crashes: Voxel collision damage is {(cfg.ProtectShipsAgainstVoxels ? "PROTECTED" : "Allowed")}.");
             sb.AppendLine($"- Voxel Craters: Explosion & crash craters are {(cfg.SuppressAllVoxelExplosionDamage ? "SUPPRESSED" : "Allowed")} (drills unaffected).");
@@ -78,7 +78,7 @@ namespace GVK.GridDefender.Commands
 
             if (speed < cfg.MinDrivingVelocity)
             {
-                Context.Respond($"[GridDefender] Result: [PROTECTED] (Safe Docking). Speed {speed:F1} m/s is below {cfg.MinDrivingVelocity:F1} m/s min driving speed.");
+                Context.Respond($"[GridDefender] Result: [PROTECTED] (Safe Docking). Speed {speed.ToString("F1", CultureInfo.InvariantCulture)} m/s is below {cfg.MinDrivingVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s min driving speed.");
                 return;
             }
 
@@ -88,7 +88,7 @@ namespace GVK.GridDefender.Commands
 
             if (isMissile)
             {
-                Context.Respond($"[GridDefender] Result: [MISSILE] (Damage Allowed!). {blocks} blocks @ {speed:F1} m/s meets missile criteria and will deal impact damage.");
+                Context.Respond($"[GridDefender] Result: [MISSILE] (Damage Allowed!). {blocks} blocks @ {speed.ToString("F1", CultureInfo.InvariantCulture)} m/s meets missile criteria and will deal impact damage.");
             }
             else
             {
@@ -116,14 +116,14 @@ namespace GVK.GridDefender.Commands
             sb.AppendLine($"Allow Missile Damage: {cfg.AllowMissileDamage}");
             sb.AppendLine($"Large Missile Blocks: {cfg.LargeGridMissileMinBlocks} - {cfg.LargeGridMissileMaxBlocks}");
             sb.AppendLine($"Small Missile Blocks: {cfg.SmallGridMissileMinBlocks} - {cfg.SmallGridMissileMaxBlocks}");
-            sb.AppendLine($"Missile Min Velocity: {cfg.MissileMinVelocity:F1} m/s");
+            sb.AppendLine($"Missile Min Velocity: {cfg.MissileMinVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s");
             sb.AppendLine($"Protect Ramming: {cfg.ProtectShipsAgainstRamming} | Protect Voxels: {cfg.ProtectShipsAgainstVoxels}");
             sb.AppendLine($"Suppress Voxel Cutouts: {cfg.SuppressAllVoxelExplosionDamage} | Protect Stations: {cfg.ProtectStaticGrids}");
             sb.AppendLine($"Protect Subgrids: {cfg.ProtectSubgrids} | Protect Floating Debris: {cfg.ProtectAgainstFloatingObjects}");
-            sb.AppendLine($"Min Driving Speed (Safe Docking): {cfg.MinDrivingVelocity:F1} m/s");
-            sb.AppendLine($"Max Velocity Limit: {cfg.MaxDeformationVelocity:F1} m/s");
-            sb.AppendLine($"Anti-Clang: {cfg.EnableAntiClang} (Damping: {cfg.ImpactVelocityDamping:F2}, Threshold: {cfg.AntiClangVibrationThreshold} frames)");
-            sb.AppendLine($"Push-Apart: {cfg.EnablePushApart} (Distance: {cfg.PushApartDistance:F2}m, Threshold: {cfg.PushApartThreshold} frames)");
+            sb.AppendLine($"Min Driving Speed (Safe Docking): {cfg.MinDrivingVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s");
+            sb.AppendLine($"Max Velocity Limit: {cfg.MaxDeformationVelocity.ToString("F1", CultureInfo.InvariantCulture)} m/s");
+            sb.AppendLine($"Anti-Clang: {cfg.EnableAntiClang} (Damping: {cfg.ImpactVelocityDamping.ToString("F2", CultureInfo.InvariantCulture)}, Threshold: {cfg.AntiClangVibrationThreshold} frames)");
+            sb.AppendLine($"Push-Apart: {cfg.EnablePushApart} (Distance: {cfg.PushApartDistance.ToString("F2", CultureInfo.InvariantCulture)}m, Threshold: {cfg.PushApartThreshold} frames)");
 
             Context.Respond(sb.ToString());
         }
@@ -144,30 +144,31 @@ namespace GVK.GridDefender.Commands
             var stats = Plugin.Statistics;
             var sb = new StringBuilder();
             sb.AppendLine("=== Grid Defender Telemetry ===");
-            sb.AppendLine($"Total Evaluated: {stats.TotalEvaluated:N0}");
-            sb.AppendLine($"Crashes Blocked: {stats.TotalBlocked:N0} ({stats.BlockRatio:F1}%)");
-            sb.AppendLine($"[MISSILE] Impacts Allowed: {stats.MissileHitsAllowed:N0}");
-            sb.AppendLine($"[CLANG] Vibrations Arrested: {stats.ClangVibrationsArrested:N0}");
-            sb.AppendLine($"[PUSH-APART] Grids Separated: {stats.GridsSeparated:N0}");
-            sb.AppendLine($"[RAMMING] Ship Ramming Blocked: {stats.RammingBlocked:N0}");
-            sb.AppendLine($"[TERRAIN] Voxel Crashes Blocked: {stats.VoxelCrashesBlocked:N0}");
-            sb.AppendLine($"[SUBGRID] Subgrid Collisions Blocked: {stats.SubgridCollisionsBlocked:N0}");
-            sb.AppendLine($"[DOCKING] Safe Docking / Low-Speed Blocked: {stats.LowSpeedBlocked:N0}");
-            sb.AppendLine($"[STATION] Station Crashes Blocked: {stats.StationBlocked:N0}");
-            sb.AppendLine($"[DEBRIS] Floating Debris Blocked: {stats.DebrisBlocked:N0}");
-            sb.AppendLine($"[COOLDOWN] Cooldown Throttled: {stats.CooldownThrottled:N0}");
+            sb.AppendLine($"Total Evaluated: {stats.TotalEvaluated.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"Crashes Blocked: {stats.TotalBlocked.ToString("N0", CultureInfo.InvariantCulture)} ({stats.BlockRatio.ToString("F1", CultureInfo.InvariantCulture)}%)");
+            sb.AppendLine($"[MISSILE] Impacts Allowed: {stats.MissileHitsAllowed.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[CLANG] Vibrations Arrested: {stats.ClangVibrationsArrested.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[PUSH-APART] Grids Separated: {stats.GridsSeparated.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[RAMMING] Ship Ramming Blocked: {stats.RammingBlocked.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[TERRAIN] Voxel Crashes Blocked: {stats.VoxelCrashesBlocked.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[SUBGRID] Subgrid Collisions Blocked: {stats.SubgridCollisionsBlocked.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[DOCKING] Safe Docking / Low-Speed Blocked: {stats.LowSpeedBlocked.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[STATION] Station Crashes Blocked: {stats.StationBlocked.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[DEBRIS] Floating Debris Blocked: {stats.DebrisBlocked.ToString("N0", CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"[COOLDOWN] Cooldown Throttled: {stats.CooldownThrottled.ToString("N0", CultureInfo.InvariantCulture)}");
 
             Context.Respond(sb.ToString());
         }
 
         /// <summary>
-        /// Resets real-time collision telemetry counters to zero.
+        /// Resets real-time collision telemetry counters to zero and prunes stale tracking caches.
         /// </summary>
         [Command("resetstats", "Resets the defense statistics counters.")]
         [Permission(MyPromoteLevel.Admin)]
         public void ResetStats()
         {
             Plugin?.Statistics?.Reset();
+            Plugin?.Engine?.SweepCaches();
             Context.Respond("GridDefender statistics have been reset to zero.");
         }
 
