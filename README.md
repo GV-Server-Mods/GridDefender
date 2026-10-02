@@ -1,4 +1,4 @@
-# 🛡️ GVK GridDefender
+# DEPRECATED - Now integrated into Physics Optimizations Plugin
 
 **High-Performance Collision Defense, Missile Allowance & Anti-Clang System for Space Engineers Torch Servers**
 
